@@ -1,0 +1,196 @@
+﻿@page "/ticketlist"
+@using Microsoft.AspNetCore.Authorization;
+@using Microsoft.AspNetCore.Identity;
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor httpContextAccessor
+@inject UserManager<IdentityUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using BlazorClient.Models
+@inject NavigationManager NavigationManager
+@inject BlazorClient.Services.ITicketService TicketService
+
+<AuthorizeView Context="authContext">
+    <Authorized>
+
+
+        <hr />
+        <p>
+            <a href="/addticket">Create New Ticket</a>
+        </p>
+
+
+
+        <h2>Your Ticket List</h2>
+
+
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>Date Created</th>
+                    <th>Status</th>
+                    <th>Category</th>
+                    <th>Priority</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!--Displays all tickets if user is an admin-->
+                @if (UserName == "nicholasadmin@email.com")
+                {
+
+                    @foreach (var tickets in Tickets)
+                    {
+
+                        <tr>
+                            <td>@tickets.Title</td>
+                            <td>@tickets.Description</td>
+                            <td>@tickets.DateCreated</td>
+
+                            @foreach (var sat in Statuses)
+                            {
+                                if (sat.StatusId == tickets.StatusId)
+                                {
+                                    <td>@sat.Name</td>
+                                }
+                            }
+
+
+                            @foreach (var cat in Categories)
+                            {
+                                if (cat.CategoryId == tickets.CategoryId)
+                                {
+                                    <td>@cat.Name</td>
+                                }
+                            }
+
+                            @foreach (var pri in Priorities)
+                            {
+                                if (pri.PriorityId == tickets.PriorityId)
+                                {
+                                    <td>@pri.Name</td>
+                                }
+                            }
+
+
+
+
+
+
+
+                            <td>
+                                @if (authContext.User.IsInRole(Admin))
+                                {
+                                    <!--Only admins can edit-->
+                                    <a href="/editticket/@tickets.TicketId">Edit</a>
+                                }
+                                <a href="/comments/@tickets.TicketId">Comment</a>
+                            </td>
+
+                        </tr>
+
+                    }
+                }
+                else
+                {
+                    <!--Displays ticket with username if not an admin-->
+                    @foreach (var tickets in UserTickets)
+                    {
+                        <tr>
+                            <td>@tickets.Title</td>
+                            <td>@tickets.Description</td>
+                            <td>@tickets.DateCreated</td>
+
+                            @foreach (var sat in Statuses)
+                            {
+                                if (sat.StatusId == tickets.StatusId)
+                                {
+                                    <td>@sat.Name</td>
+                                }
+                            }
+
+
+                            @foreach (var cat in Categories)
+                            {
+                                if (cat.CategoryId == tickets.CategoryId)
+                                {
+                                    <td>@cat.Name</td>
+                                }
+                            }
+
+                            @foreach (var pri in Priorities)
+                            {
+                                if (pri.PriorityId == tickets.PriorityId)
+                                {
+                                    <td>@pri.Name</td>
+                                }
+                            }
+
+                            <td>
+                                @if (authContext.User.IsInRole(Admin))
+                                {
+                                    <a href="/editticket/@tickets.TicketId">Edit</a>
+                                }
+                                <a href="/comments/@tickets.TicketId">Comment</a>
+                            </td>
+
+                        </tr>
+
+                    }
+                }
+
+
+            </tbody>
+        </table>
+
+    </Authorized>
+    <NotAuthorized>
+        <p>Please log in.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+
+@code{
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string Admin = "Administrators";
+    System.Security.Claims.ClaimsPrincipal CurrentUser;
+
+    private List<Ticket> Tickets = new List<Ticket>();
+    private List<Ticket> UserTickets = new List<Ticket>();
+    private List<Category> Categories = new List<Category>();
+    private List<Status> Statuses = new List<Status>();
+    private List<Priority> Priorities = new List<Priority>();
+
+
+    public string UserName;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        UserName = httpContextAccessor.HttpContext.User.Identity.Name;
+
+        if (UserName == "nicholasadmin@email.com")
+        {
+            Tickets = await TicketService.GetTickets();
+        }
+
+        UserTickets = await TicketService.GetTicketsByUser(UserName);
+
+
+
+        Categories = await TicketService.GetCategory();
+        Priorities = await TicketService.GetPriority();
+        Statuses = await TicketService.GetStatus();
+
+
+    }
+
+
+
+}

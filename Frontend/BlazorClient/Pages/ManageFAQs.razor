@@ -1,0 +1,81 @@
+﻿@page "/managefaq"
+@using Microsoft.AspNetCore.Authorization;
+@using Microsoft.AspNetCore.Identity;
+@using Microsoft.AspNetCore.SignalR.Client
+
+@inject UserManager<IdentityUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using BlazorClient.Models
+@inject BlazorClient.Services.IFaqService FaqService
+<!--Displats all FAQs-->
+<AuthorizeView>
+    <Authorized>
+        <!--Checks if user is an Admin-->
+        @if (@context.User.IsInRole(Admin))
+        {
+            <h3>Manage FAQs</h3>
+
+            <hr />
+            <p>
+                <a href="/addfaq">Create New FAQ</a>
+            </p>
+
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Question</th>
+                        <th>Answer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var qa in Faqs)
+                    {
+                        <tr>
+                            <td>@qa.Question</td>
+                            <td>@qa.Answer</td>
+
+                            <td>
+                                <a href="/editfaq/@qa.FaqId">Edit</a>
+                            </td>
+                        </tr>
+
+                    }
+                </tbody>
+            </table>
+
+
+
+
+        }
+        else
+        {
+            <p>You're not authorized to access this page.</p>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <p>You're not Authorized!!!</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+
+@code{
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string Admin = "Administrators";
+    System.Security.Claims.ClaimsPrincipal CurrentUser;
+
+    private List<Faq> Faqs = new List<Faq>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Faqs = await FaqService.GetFaqs();
+    }
+
+
+
+
+}

@@ -1,0 +1,357 @@
+﻿<!--
+    This page was craeted following this tutroial
+   https://blazorhelpwebsite.com/ViewBlogPost/21
+-->
+@page "/administration"
+@using Microsoft.AspNetCore.Authorization;
+@using Microsoft.AspNetCore.Identity;
+@inject UserManager<IdentityUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using BlazorClient.Models
+@inject BlazorClient.Services.ITicketService TicketService
+<h3>Admin Page</h3>
+<AuthorizeView>
+    <Authorized>
+        @if (@context.User.IsInRole(Admin))
+        {
+            <p>@Admin </p>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>User Name</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in userList)
+                    {
+                        <tr>
+                            <td>@user.Id.Substring(0, 5) ...</td>
+                            <td>@user.UserName</td>
+                            <td>@user.Email</td>
+                            <td>
+                                <button class="btn btn-primary"
+                                        @onclick="(() => EditUser(user))">
+                                    Edit
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            @if (Modal)
+            {
+                <div class="modal" tabindex="-1" style="display:block" role="dialog">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3 class="modal-title">Edit User</h3>
+            
+                                <button type="button" class="close"
+                                        @onclick="ClosePopup">
+                                    <span aria-hidden="true">X</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                @if (objUser.Id != "")
+                                {
+                                    <p>@objUser.Id</p>
+                                }
+                                @if (objUser.Id != "")
+                                {
+                                    <p>@objUser.UserName</p>
+                                }
+                                else
+                                {
+                                    <input class="form-control" type="text"
+                                           placeholder="UserName"
+                                           @bind="objUser.UserName" />
+                                }
+                                <input class="form-control" type="text"
+                                       placeholder="Email"
+                                       @bind="objUser.Email" />
+                                <input class="form-control" type="password"
+                                       placeholder="Password"
+                                       @bind="objUser.PasswordHash" />
+                                <select class="form-control"
+                                        @bind="@CurrentUserRole">
+                                    @foreach (var option in Options)
+                                    {
+                                        <option value="@option">
+                                            @option
+                                        </option>
+                                    }
+                                </select>
+                                <br /><br />
+                                <button class="btn btn-primary"
+                                        @onclick="SaveUser">
+                                    Save
+                                </button>
+                                @if (objUser.Id != "")
+                                {
+                                    <button class="btn btn-danger"
+                                            @onclick="DeleteUser">
+                                        Delete
+                                    </button>
+                                }
+                                <br />
+                                <span style="color:red">@strError</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            <button class="btn btn-success" @onclick="AddNewUser">Add User</button>
+
+            <br />
+            <h3>Closed Tickets:</h3>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Date Created</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var tickets in Tickets)
+                    {
+                        <tr>
+                            <td>@tickets.Title</td>
+                            <td>@tickets.Description</td>
+                            <td>@tickets.DateCreated</td>
+
+                            @foreach (var sat in Statuses)
+                            {
+                                if (sat.StatusId == tickets.StatusId)
+                                {
+                                    <td>@sat.Name</td>
+                                }
+                            }
+
+
+                            @foreach (var cat in Categories)
+                            {
+                                if (cat.CategoryId == tickets.CategoryId)
+                                {
+                                    <td>@cat.Name</td>
+                                }
+                            }
+
+                            @foreach (var pri in Priorities)
+                            {
+                                if (pri.PriorityId == tickets.PriorityId)
+                                {
+                                    <td>@pri.Name</td>
+                                }
+                            }
+
+
+
+
+
+
+
+                            <td>
+
+                                <a href="/editticket/@tickets.TicketId">Edit</a>
+
+                                <a href="/comments/@tickets.TicketId">Comment</a>
+                            </td>
+
+                        </tr>
+
+                    }
+
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p>You're not signed in as a user in @Admin.</p>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <p>You're not loggged in.</p>
+    </NotAuthorized>
+</AuthorizeView>
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string Admin = "Administrators";
+    System.Security.Claims.ClaimsPrincipal CurrentUser;
+
+
+
+
+
+    private IEnumerable<Ticket> Tickets = new List<Ticket>();
+    private List<Category> Categories = new List<Category>();
+    private List<Status> Statuses = new List<Status>();
+    private List<Priority> Priorities = new List<Priority>();
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        Guid StatusId = new Guid("9853a3dc-6c18-4215-81ee-cdfff42a62e1");
+        Tickets = await TicketService.GetTicketsByStatus(StatusId);
+        Categories = await TicketService.GetCategory();
+        Priorities = await TicketService.GetPriority();
+        Statuses = await TicketService.GetStatus();
+        var RoleResult = await _RoleManager.FindByNameAsync(Admin);
+        if (RoleResult == null)
+        {
+            await _RoleManager.CreateAsync(new IdentityRole(Admin));
+        }
+        var user = await _UserManager.FindByNameAsync("nicholasadmin@email.com");
+        if (user != null)
+        {
+            var UserResult = await _UserManager.IsInRoleAsync(user, Admin);
+            if (!UserResult)
+            {
+                await _UserManager.AddToRoleAsync(user, Admin);
+            }
+        }
+        CurrentUser = (await authenticationStateTask).User;
+        GetUsers();
+    }
+
+    IdentityUser objUser = new IdentityUser();
+    string CurrentUserRole { get; set; } = "Users";
+    List<IdentityUser> userList = new List<IdentityUser>();
+    List<string> Options = new List<string>() { "Users", "Administrators" };
+    string strError = "";
+    bool Modal = false;
+
+    void AddNewUser()
+    {
+        // Make new user
+        objUser = new IdentityUser();
+        objUser.PasswordHash = "*****";
+        objUser.Id = "";
+        Modal = true;
+    }
+    async Task SaveUser()
+    {
+        var user = await _UserManager.FindByIdAsync(objUser.Id);
+        user.Email = objUser.Email;
+        await _UserManager.UpdateAsync(user);
+        if (objUser.PasswordHash != "*****")
+        {
+            var resetToken =
+                await _UserManager.GeneratePasswordResetTokenAsync(user);
+            var passworduser =
+                await _UserManager.ResetPasswordAsync(
+                    user,
+                    resetToken,
+                    objUser.PasswordHash);
+            if (!passworduser.Succeeded)
+            {
+                if (passworduser.Errors.FirstOrDefault() != null)
+                {
+                    strError =
+                        passworduser
+                        .Errors
+                        .FirstOrDefault()
+                        .Description;
+                }
+                else
+                {
+                    strError = "Pasword error";
+                }
+                return;
+            }
+        }
+
+        var UserResult =
+            await _UserManager
+            .IsInRoleAsync(user, Admin);
+
+        if (
+            (CurrentUserRole == Admin)
+            &
+            (!UserResult))
+        {
+            await _UserManager
+                .AddToRoleAsync(user, Admin);
+        }
+        else
+        {
+
+            if ((CurrentUserRole != Admin)
+                &
+                (UserResult))
+            {
+                await _UserManager
+                    .RemoveFromRoleAsync(user, Admin);
+            }
+        }
+    }
+
+    async Task EditUser(IdentityUser _IdentityUser)
+    {
+
+        objUser = _IdentityUser;
+        var user = await _UserManager.FindByIdAsync(objUser.Id);
+        if (user != null)
+        {
+            var UserResult =
+                await _UserManager
+                .IsInRoleAsync(user, Admin);
+            if (UserResult)
+            {
+                CurrentUserRole = Admin;
+            }
+            else
+            {
+                CurrentUserRole = "Users";
+            }
+        }
+        Modal = true;
+    }
+
+
+
+
+
+
+    async Task DeleteUser()
+    {
+        Modal = false;
+        var user = await _UserManager.FindByIdAsync(objUser.Id);
+        if (user != null)
+        {
+            await _UserManager.DeleteAsync(user);
+        }
+        GetUsers();
+    }
+    void ClosePopup()
+    {
+        Modal = false;
+    }
+
+    public void GetUsers()
+    {
+        strError = "";
+        userList = new List<IdentityUser>();
+        var user = _UserManager.Users.Select(x => new IdentityUser
+        {
+            Id = x.Id,
+            UserName = x.UserName,
+            Email = x.Email,
+            PasswordHash = "*****"
+        });
+        foreach (var item in user)
+        {
+            userList.Add(item);
+        }
+    }
+
+
+}

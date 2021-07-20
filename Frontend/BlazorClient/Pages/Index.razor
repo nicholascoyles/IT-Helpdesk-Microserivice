@@ -1,0 +1,48 @@
+﻿@page "/"
+
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor httpContextAccessor
+@using BlazorClient.Models
+@inject BlazorClient.Services.ITicketService TicketService
+
+@inject IJSRuntime jsRunTime
+
+<h1>Hello, welcome to Nicholas' Help Desk!</h1>
+<h2>Hello: @UserName</h2>
+
+
+<h3>Features:</h3>
+
+<ul>
+    <li>Create first user using: nicholasadmin@email.com</li>
+
+    <li>Create Ticket</li>
+    <li>Create FAQ</li>
+    <li>Create Comment</li>
+    <li>Comment on Ticket</li>
+    <li>Edit Ticket</li>
+    <li>Edit FAQ</li>
+    <li>Edit Category</li>
+    <li>Edit User</li>
+</ul>
+
+
+@code {
+    public string UserName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        UserName = httpContextAccessor.HttpContext.User.Identity.Name;
+    }
+
+    Ticket TicketDetail = new Ticket();
+    List<Ticket> TicketDetails = new List<Ticket>();
+
+    private async Task GenerateChart()
+    {
+        TicketDetails = await TicketService.GetTickets();
+        await jsRunTime.InvokeVoidAsync("GenerateChart", TicketDetails);
+    }
+
+}
+

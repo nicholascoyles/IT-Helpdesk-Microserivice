@@ -1,0 +1,111 @@
+﻿@page "/editfaq/{FaqId}"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+@using BlazorClient.Models
+
+@using Microsoft.AspNetCore.Identity;
+
+@inject UserManager<IdentityUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@inject BlazorClient.Services.IFaqService FaqService
+    <!--Only admins can edit FAQ-->
+<AuthorizeView Context="authContext">
+    <Authorized>
+        @if (authContext.User.IsInRole(Admin))
+        {
+            <!--Display message if error displaying FAQs-->
+            @if (CurrentFaq == null)
+            {
+                <span>Loading FAQ from database....</span>
+            }
+            else
+            {
+
+                <h2>Edit FAQ</h2>
+                <hr />
+                <p>
+                    <a href="/managefaq">Back</a>
+                </p>
+                <card>
+                    <!--Edit form-->
+                    <EditForm Model="CurrentFaq" OnValidSubmit="FormSubmit" Context="formContext">
+                        <DataAnnotationsValidator />
+                        <hr />
+                        <ValidationSummary />
+
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label for="FaqQuestion" class="control-label">Question</label>
+                                    <InputText id="FaqQuestion" class="form-control" placeholder="Question"
+                                               @bind-Value="CurrentFaq.Question" />
+                                    <!--Validation error message-->
+                                    <ValidationMessage For="@(() => CurrentFaq.Question)" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="FaqAnswer" class="control-label">Answer</label>
+                                    <InputText id="FaqAnswer" class="form-control" placeholder="Answer"
+                                               @bind-Value="CurrentFaq.Answer" />
+                                    <!--Validation error message-->
+                                    <ValidationMessage For="@(() => CurrentFaq.Answer)" />
+
+                                </div>
+                            </div>
+                        </div>
+                        <input type="submit" class="btn btn-primary" value="Save" />
+                        <input type="button" @onclick="@DeleteFaq" class="btn btn-danger" value="Delete" />
+
+                    </EditForm>
+                </card>
+            }
+
+
+        }
+        else
+        {
+            <!--If user is not an Admin-->
+            <p>You're not signed in as a user in @Admin.</p>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <!--If user isn't logged in-->
+        <p>Please log in.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+
+@code{
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string Admin = "Administrators";
+
+
+    private BlazorClient.Models.Faq CurrentFaq;
+
+    [Parameter]
+    public string FaqId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        CurrentFaq = await FaqService.GetFaqById(FaqId);
+    }
+
+
+    protected async Task FormSubmit()
+    {
+        await Http.SendJsonAsync(HttpMethod.Put, "https://localhost:5008/api/Faqlist/" + FaqId, CurrentFaq);
+        NavigationManager.NavigateTo("managefaq");
+
+    }
+
+    protected async Task DeleteFaq()
+    {
+        await Http.SendJsonAsync(HttpMethod.Delete, "https://localhost:5008/api/Faqlist/" + FaqId, CurrentFaq);
+        NavigationManager.NavigateTo("managefaq");
+
+    }
+}

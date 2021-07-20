@@ -1,0 +1,123 @@
+﻿@page "/addticket"
+@using Microsoft.AspNetCore.SignalR.Client
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.Identity;
+@using BlazorClient.Models
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor httpContextAccessor
+@inject UserManager<IdentityUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject BlazorClient.Services.ITicketService TicketService
+
+
+
+<AuthorizeView Context="authContext">
+    <Authorized>
+        <card>
+            <!--Create ticket form-->
+            <EditForm Model="ticket" OnValidSubmit="FormSubmit">
+                <DataAnnotationsValidator />
+                <h2>Create Ticket</h2>
+
+                <hr />
+                <ValidationSummary />
+
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="form-group">
+                            <label for="Title" class="control-label">Title</label>
+                            <InputText id="Title" class="form-control" placeholder="Title"
+                                       @bind-Value="ticket.Title" />
+                            <!--Validation error message-->
+                            <ValidationMessage For="@(() => ticket.Title)" />
+                        </div>
+                        <div class="form-group">
+                            <label for="Description" class="control-label">Description</label>
+                            <InputText id="Description" class="form-control" placeholder="Descriptiom"
+                                       @bind-Value="ticket.Description" />
+                            <!--Validation error message-->
+                            <ValidationMessage For="@(() => ticket.Description)" />
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>Category</label>
+                            <select @bind="@ticket.CategoryId">
+                                <!--Drop down of all categories-->
+                                @foreach (var item in Categories)
+                                {
+                                    <option value="@item.CategoryId">@item.Name</option>
+                                }
+
+                            </select>
+                            <!--Validation error message-->
+                            <ValidationMessage For="@(() => ticket.CategoryId)" />
+
+                        </div>
+                        <div class="form-group">
+
+                            <label>Priority</label>
+                            <select @bind="@ticket.PriorityId">
+                                <!--Drop down of all priorities-->
+                                @foreach (var item in Priorities)
+                                {
+                                    <option value="@item.PriorityId">@item.Name</option>
+                                }
+
+                            </select>
+                            <!--Validation error message-->
+                            <ValidationMessage For="@(() => ticket.PriorityId)" />
+
+                        </div>
+                    </div>
+                </div>
+                <input type="submit" class="btn btn-primary" value="Save" />
+            </EditForm>
+        </card>
+
+
+
+    </Authorized>
+    <NotAuthorized>
+        <p>You're not logged in.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+
+
+
+@code{
+
+
+    private List<Category> Categories = new List<Category>();
+    private List<Status> Statuses = new List<Status>();
+    private List<Priority> Priorities = new List<Priority>();
+    public string UserName;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        Categories = await TicketService.GetCategory();
+        Priorities = await TicketService.GetPriority();
+        Statuses = await TicketService.GetStatus();
+        UserName = httpContextAccessor.HttpContext.User.Identity.Name;
+
+    }
+
+    Ticket ticket = new Ticket();
+
+
+    protected async Task FormSubmit()
+    {
+        ticket.TicketId = Guid.NewGuid().ToString();
+        ticket.StatusId = new Guid("9853a3dc-6c18-4215-81ee-cdfff42a62e0");
+        ticket.Username = UserName;
+        ticket.DateCreated = DateTime.Now;
+        await Http.PostJsonAsync("https://localhost:5008/api/tickets/createTicket", ticket);
+        NavigationManager.NavigateTo("ticketlist");
+
+    }
+}

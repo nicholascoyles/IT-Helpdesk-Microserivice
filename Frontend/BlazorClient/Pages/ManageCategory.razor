@@ -1,0 +1,78 @@
+﻿@page "/managecategories"
+@using Microsoft.AspNetCore.Authorization;
+@using Microsoft.AspNetCore.Identity;
+@using Microsoft.AspNetCore.SignalR.Client
+
+@inject UserManager<IdentityUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using BlazorClient.Models
+@inject BlazorClient.Services.ICategoryService CategoryService
+<!--Displays all Categories-->
+<AuthorizeView>
+    <Authorized>
+        <!--Checks if user is an admin-->
+        @if (@context.User.IsInRole(Admin))
+        {
+            <h3>Manage Categories</h3>
+
+            <hr />
+            <p>
+                <a href="/addcategory">Create New Category</a>
+            </p>
+
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var cat in Categories)
+                    {
+                        <tr>
+                            <td>@cat.Name</td>
+
+                            <td>
+                                <a href="/editcategory/@cat.CategoryId">Edit</a>
+                            </td>
+                        </tr>
+
+                    }
+                </tbody>
+            </table>
+
+
+
+
+        }
+        else
+        {
+            <p>No access.</p>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <p>No access</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+
+@code{
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string Admin = "Administrators";
+    System.Security.Claims.ClaimsPrincipal CurrentUser;
+
+    private List<Category> Categories = new List<Category>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Categories = await CategoryService.GetCategories();
+    }
+
+
+}

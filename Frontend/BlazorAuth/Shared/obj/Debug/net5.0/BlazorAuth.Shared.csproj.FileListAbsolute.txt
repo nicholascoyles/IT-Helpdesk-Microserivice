@@ -1,0 +1,12 @@
+C:\Users\User\Desktop\Code submission\NicholasHelpDesk\Frontend\BlazorAuth\Shared\bin\Debug\net5.0\BlazorAuth.Shared.deps.json
+C:\Users\User\Desktop\Code submission\NicholasHelpDesk\Frontend\BlazorAuth\Shared\bin\Debug\net5.0\BlazorAuth.Shared.dll
+C:\Users\User\Desktop\Code submission\NicholasHelpDesk\Frontend\BlazorAuth\Shared\bin\Debug\net5.0\ref\BlazorAuth.Shared.dll
+C:\Users\User\Desktop\Code submission\NicholasHelpDesk\Frontend\BlazorAuth\Shared\bin\Debug\net5.0\BlazorAuth.Shared.pdb
+C:\Users\User\Desktop\Code submission\NicholasHelpDesk\Frontend\BlazorAuth\Shared\obj\Debug\net5.0\BlazorAuth.Shared.csprojAssemblyReference.cache
+C:\Users\User\Desktop\Code submission\NicholasHelpDesk\Frontend\BlazorAuth\Shared\obj\Debug\net5.0\BlazorAuth.Shared.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\User\Desktop\Code submission\NicholasHelpDesk\Frontend\BlazorAuth\Shared\obj\Debug\net5.0\BlazorAuth.Shared.AssemblyInfoInputs.cache
+C:\Users\User\Desktop\Code submission\NicholasHelpDesk\Frontend\BlazorAuth\Shared\obj\Debug\net5.0\BlazorAuth.Shared.AssemblyInfo.cs
+C:\Users\User\Desktop\Code submission\NicholasHelpDesk\Frontend\BlazorAuth\Shared\obj\Debug\net5.0\BlazorAuth.Shared.csproj.CoreCompileInputs.cache
+C:\Users\User\Desktop\Code submission\NicholasHelpDesk\Frontend\BlazorAuth\Shared\obj\Debug\net5.0\BlazorAuth.Shared.dll
+C:\Users\User\Desktop\Code submission\NicholasHelpDesk\Frontend\BlazorAuth\Shared\obj\Debug\net5.0\ref\BlazorAuth.Shared.dll
+C:\Users\User\Desktop\Code submission\NicholasHelpDesk\Frontend\BlazorAuth\Shared\obj\Debug\net5.0\BlazorAuth.Shared.pdb

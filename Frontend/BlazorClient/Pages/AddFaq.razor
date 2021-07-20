@@ -1,0 +1,83 @@
+﻿@page "/addfaq"
+@using Microsoft.AspNetCore.SignalR.Client
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.Authorization;
+@using BlazorClient.Models
+@using Microsoft.AspNetCore.Identity;
+
+@inject UserManager<IdentityUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject BlazorClient.Services.IFaqService FaqService
+
+<AuthorizeView Context="authContext">
+    <Authorized>
+        <!--Checks if user is an admin-->
+        @if (authContext.User.IsInRole(Admin))
+        {
+            <hr />
+            <p>
+                <a href="/managefaq">Back</a>
+            </p>
+            <card>
+                <!--Create FAQ form-->
+                <EditForm Model="_qa" OnValidSubmit="FormSubmit" Context="formContext">
+                    <DataAnnotationsValidator />
+                    <h2>Create FAQ</h2>
+                    <hr />
+                    <ValidationSummary />
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label for="FaqQuestion" class="control-label">Question</label>
+                                <InputText id="FaqQuestion" class="form-control" placeholder="Question"
+                                           @bind-Value="_qa.Question" />
+                                <!--Validation error message-->
+                                <ValidationMessage For="@(() => _qa.Question)" />
+                            </div>
+                            <div class="form-group">
+                                <label for="FaqAnswer" class="control-label">Answer</label>
+                                <InputText id="FaqAnswer" class="form-control" placeholder="Answer"
+                                           @bind-Value="_qa.Answer" />
+                                <!--Validation error message-->
+                                <ValidationMessage For="@(() => _qa.Answer)" />
+
+                            </div>
+                        </div>
+                    </div>
+                    <input type="submit" class="btn btn-primary" value="Save" />
+                </EditForm>
+            </card>
+
+        }
+        else
+        {
+            <p>You're not signed in as a user in @Admin.</p>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <p>Please log in.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+
+@code{
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string Admin = "Administrators";
+    System.Security.Claims.ClaimsPrincipal CurrentUser;
+
+    Faq _qa = new Faq();
+
+
+    private async Task FormSubmit()
+    {
+        _qa.FaqId = Guid.NewGuid().ToString();
+        await Http.PostJsonAsync("https://localhost:5008/api/Faqadd", _qa);
+        NavigationManager.NavigateTo("managefaq");
+    }
+
+}

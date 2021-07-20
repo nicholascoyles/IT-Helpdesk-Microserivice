@@ -1,0 +1,97 @@
+﻿@page "/editcategory/{CategoryId}"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+@using BlazorClient.Models
+@using Microsoft.AspNetCore.Identity;
+
+@inject UserManager<IdentityUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@inject BlazorClient.Services.ICategoryService CategoryService
+
+<AuthorizeView Context="authContext">
+    <Authorized>
+        @if (authContext.User.IsInRole(Admin))
+        {
+
+            @if (CurrentCategory == null)
+            {
+                <span>Loading Category from database....</span>
+            }
+            else
+            {
+
+                <h2>Edit Category</h2>
+                <hr />
+                <p>
+                    <a href="/managecategories">Back</a>
+                </p>
+                <card>
+                    <EditForm Model="CurrentCategory" OnValidSubmit="FormSubmit" Context="formContext">
+                        <DataAnnotationsValidator />
+                        <hr />
+                        <ValidationSummary />
+
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label for="Name" class="control-label">Name</label>
+                                    <InputText id="Name" class="form-control" placeholder="Category"
+                                               @bind-Value="CurrentCategory.Name" />
+                                    <ValidationMessage For="@(() => CurrentCategory.Name)" />
+                                </div>
+                            </div>
+                        </div>
+                        <input type="submit" class="btn btn-primary" value="Save" />
+                        <input type="button" @onclick="@DeleteFaq" class="btn btn-danger" value="Delete" />
+
+                    </EditForm>
+                </card>
+            }
+
+        }
+        else
+        {
+            <p>You're not signed in as a user in @Admin.</p>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <p>You're not logged in.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+
+@code{
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string Admin = "Administrators";
+
+    System.Security.Claims.ClaimsPrincipal CurrentUser;
+    private BlazorClient.Models.Category CurrentCategory;
+
+    [Parameter]
+    public string CategoryId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        CurrentCategory = await CategoryService.GetCategoryById(CategoryId);
+    }
+
+
+    protected async Task FormSubmit()
+    {
+        await Http.SendJsonAsync(HttpMethod.Put, "https://localhost:5008/api/categorylist/" + CategoryId, CurrentCategory);
+        NavigationManager.NavigateTo("managecategories");
+
+    }
+
+    protected async Task DeleteFaq()
+    {
+        await Http.SendJsonAsync(HttpMethod.Delete, "https://localhost:5008/api/categorylist/" + CategoryId, CurrentCategory);
+        NavigationManager.NavigateTo("managecategories");
+
+    }
+}

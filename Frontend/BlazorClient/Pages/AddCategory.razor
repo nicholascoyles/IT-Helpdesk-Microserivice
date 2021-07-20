@@ -1,0 +1,79 @@
+﻿@page "/addcategory"
+@using Microsoft.AspNetCore.SignalR.Client
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.Authorization;
+@using BlazorClient.Models
+@using Microsoft.AspNetCore.Identity;
+
+@inject UserManager<IdentityUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject BlazorClient.Services.IFaqService FaqService
+
+
+<AuthorizeView Context="authContext">
+    <Authorized>
+        <!--Checks if user is an admin-->
+        @if (authContext.User.IsInRole(Admin))
+        {
+            <hr />
+            <p>
+                <a href="/managecategories">Back</a>
+            </p>
+            <card>
+                <!--Create category form-->
+                <EditForm Model="cat" OnValidSubmit="FormSubmit" Context="formContext">
+                    <DataAnnotationsValidator />
+                    <h2>Create FAQ</h2>
+                    <hr />
+                    <ValidationSummary />
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label for="Name" class="control-label">Category</label>
+                                <InputText id="Name" class="form-control" placeholder="Category"
+                                           @bind-Value="cat.Name" />
+                                <!--Displays error message-->
+                                <ValidationMessage For="@(() => cat.Name)" />
+                            </div>
+                        </div>
+                    </div>
+                    <input type="submit" class="btn btn-primary" value="Save" />
+                </EditForm>
+            </card>
+
+        }
+        else
+        {
+            <!--If user is logged in but not an admin-->
+            <p>You're not signed in as a user in @Admin.</p>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <!--User is not logged in-->
+        <p>Please log in.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+
+@code{
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string Admin = "Administrators";
+    System.Security.Claims.ClaimsPrincipal CurrentUser;
+    Category cat = new Category();
+
+    private async Task FormSubmit()
+    {
+        cat.CategoryId = Guid.NewGuid();
+
+
+        await Http.PostJsonAsync("https://localhost:5008/api/categorylist", cat);
+
+        NavigationManager.NavigateTo("managecategories");
+    }
+
+}

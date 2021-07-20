@@ -1,0 +1,39 @@
+﻿@page "/faqlist"
+@using Microsoft.AspNetCore.SignalR.Client
+@using BlazorClient.Models
+@inject BlazorClient.Services.IFaqService FaqService
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor httpContextAccessor
+
+<h2>Frequently Asked Questions</h2>
+
+<div class="container">
+    <div class="row">
+        <!--Displays all FAQs-->
+        @foreach (var faqs in Faqs)
+        {
+            <div class="card">
+                <div class="card-header">
+                    <h2>@faqs.Question</h2>
+                </div>
+                <div class="card-body">
+                    <p>@faqs.Answer</p>
+                </div>
+            </div>
+
+        }
+    </div>
+</div>
+
+@code{
+    public string UserName;
+
+
+    private List<Faq> Faqs = new List<Faq>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        UserName = httpContextAccessor.HttpContext.User.Identity.Name;
+        Faqs = await FaqService.GetFaqs();
+    }
+}

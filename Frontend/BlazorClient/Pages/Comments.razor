@@ -1,0 +1,113 @@
+﻿@page "/comments/{TicketId}"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor httpContextAccessor
+@using BlazorClient.Models
+
+
+<AuthorizeView Context="authContext">
+    <Authorized>
+
+        <!--Displays message if error display comments-->
+        @if (ticketComments == null)
+        {
+            <span>Loading Comments....</span>
+        }
+        else
+        {
+
+            <h2>Tickets Discussion</h2>
+            <hr />
+            <p>
+                <a href="/ticketlist">Back</a>
+            </p>
+
+            <!--Checks if user is an admin-->
+            <!--Displays message in different colour depending if user or admin-->
+            @foreach (var comments in ticketComments)
+            {
+                @if (comments.User != "nicholasadmin@email.com")
+                {
+
+                    <p class=" message sent">@comments.CommentContent</p>
+                    <p class=" sent-info user">@comments.User: @comments.PostTime</p>
+
+
+                }
+                else
+                {
+                    <p class=" message received">@comments.CommentContent</p>
+                    <p class=" received-info user">@comments.User: @comments.PostTime</p>
+                }
+
+            }
+
+        }
+
+
+
+        <card>
+            <!--Add comment form-->
+            <EditForm Model="_newComment" OnValidSubmit="FormSubmit">
+                <DataAnnotationsValidator />
+                <h2>Post Comment:</h2>
+                <hr />
+                <ValidationSummary />
+
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="form-group">
+                            <label for="Comment" class="control-label">Comment</label>
+                            <InputText id="Comment" class="form-control" placeholder="Add Comment..."
+                                       @bind-Value="_newComment.CommentContent" />
+                            <!--Validation error message-->
+                            <ValidationMessage For="@(() => _newComment.CommentContent)" />
+                        </div>
+
+                    </div>
+                </div>
+                <input type="submit" class="btn btn-primary" value="Save" />
+            </EditForm>
+        </card>
+
+        <!--Checks if user is logged in-->
+    </Authorized>
+    <NotAuthorized>
+        <p>You're not logged in.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code{
+    private BlazorClient.Models.TicketComments CurrentComment;
+    public string UserName;
+    TicketComments _newComment = new TicketComments();
+    private List<TicketComments> ticketComments = new List<TicketComments>();
+
+    [Parameter]
+    public string TicketId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        UserName = httpContextAccessor.HttpContext.User.Identity.Name;
+        ticketComments = await Http.GetJsonAsync<List<TicketComments>>($"https://localhost:5008/api/tickets/{TicketId}/comments/");
+    }
+
+    private async Task FormSubmit()
+    {
+        _newComment.CommentId = Guid.NewGuid().ToString();
+        _newComment.TicketId = TicketId;
+        _newComment.PostTime = DateTime.Now;
+        _newComment.User = UserName;
+
+        await Http.PostJsonAsync($"https://localhost:5008/api/commenting/tickets/comment/{TicketId}", _newComment);
+
+    }
+
+
+
+
+
+
+
+}
